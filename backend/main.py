@@ -4,13 +4,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 
-from routers import notes, transcription, ai, download, screenshot
+from routers import notes, transcription, ai, download, screenshot, llm_config
 from services.storage_service import init_db
+from services.llm_config_service import ensure_table as init_llm_table
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    await init_llm_table()
     os.makedirs("storage/screenshots", exist_ok=True)
     yield
 
@@ -36,6 +38,7 @@ app.include_router(transcription.router, prefix="/transcription", tags=["Transcr
 app.include_router(ai.router,            prefix="/ai",            tags=["AI Generation"])
 app.include_router(download.router,      prefix="/download",      tags=["Download"])
 app.include_router(screenshot.router,    prefix="/screenshot",    tags=["Screenshot"])
+app.include_router(llm_config.router,    prefix="/llm-config",    tags=["LLM Configuration"])
 
 
 @app.get("/health")
