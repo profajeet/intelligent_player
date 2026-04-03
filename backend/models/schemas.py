@@ -104,3 +104,94 @@ class ScreenshotResponse(BaseModel):
     filename:       str
     video_id:       str
     video_timestamp: float
+
+
+# ── LLM Configuration ────────────────────────────────────────────────────────
+
+class LLMProviderEnum(str, Enum):
+    OPENAI    = "openai"
+    ANTHROPIC = "anthropic"
+    GEMINI    = "gemini"
+    OLLAMA    = "ollama"
+    VLLM      = "vllm"
+
+
+class LLMConfigCreate(BaseModel):
+    """Payload to register a new LLM provider configuration."""
+    name:       str                        # Human label, e.g. "My local Llama"
+    provider:   LLMProviderEnum
+    model:      str                        # e.g. "gpt-4o-mini", "llama3", "gemini-1.5-flash"
+    api_key:    Optional[str] = None       # Required for cloud providers
+    base_url:   Optional[str] = None       # Custom endpoint (Ollama, vLLM, Azure, etc.)
+    extra:      Optional[dict] = None      # Any provider-specific extras
+    set_active: bool = True                # Make this the active config immediately
+
+    model_config = {"json_schema_extra": {
+        "examples": [
+            {
+                "name": "GPT-4o Mini",
+                "provider": "openai",
+                "model": "gpt-4o-mini",
+                "api_key": "sk-...",
+                "set_active": True,
+            },
+            {
+                "name": "Claude Haiku",
+                "provider": "anthropic",
+                "model": "claude-haiku-4-5-20251001",
+                "api_key": "sk-ant-...",
+                "set_active": True,
+            },
+            {
+                "name": "Gemini Flash",
+                "provider": "gemini",
+                "model": "gemini-1.5-flash",
+                "api_key": "AIza...",
+                "set_active": True,
+            },
+            {
+                "name": "Local Llama3",
+                "provider": "ollama",
+                "model": "llama3",
+                "base_url": "http://localhost:11434",
+                "set_active": True,
+            },
+            {
+                "name": "vLLM Mistral",
+                "provider": "vllm",
+                "model": "mistralai/Mistral-7B-Instruct-v0.3",
+                "base_url": "http://localhost:8001/v1",
+                "api_key": "EMPTY",
+                "set_active": True,
+            },
+        ]
+    }}
+
+
+class LLMConfigUpdate(BaseModel):
+    """Partial update for an existing config (all fields optional)."""
+    name:     Optional[str]  = None
+    model:    Optional[str]  = None
+    api_key:  Optional[str]  = None
+    base_url: Optional[str]  = None
+    extra:    Optional[dict] = None
+
+
+class LLMConfigResponse(BaseModel):
+    """Safe public view — api_key is masked."""
+    id:         int
+    name:       str
+    provider:   str
+    model:      str
+    api_key:    Optional[str] = None   # always masked
+    base_url:   Optional[str] = None
+    extra:      Optional[dict] = None
+    is_active:  int
+    created_at: str
+    updated_at: str
+
+
+class LLMTestRequest(BaseModel):
+    """Ask the active (or a specific) config to answer a test prompt."""
+    config_id: Optional[int] = None   # None = use active
+    prompt:    str = "Say hello in one sentence."
